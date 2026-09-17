@@ -63,11 +63,13 @@ function the_term_thumbnail($attr)
 function get_term_thumbnail($attr = null)
 {
     $thumbnail = null;
+    $queried_object = get_queried_object();
+    $default_term_id = ($queried_object instanceof WP_Term) ? $queried_object->term_id : null;
     $attr = wp_parse_args($attr, [
         'width'            => '100',
         'height'           => '100',
         'crop'             => true,
-        'term_id'          => get_queried_object()->term_id ?? null,
+        'term_id'          => $default_term_id,
         'show_placeholder' => true,
         'attach_id'        => null,
         'class'            => 'rounded',

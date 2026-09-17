@@ -3,6 +3,10 @@
  * Admin settings
  */
 
+if (class_exists('TermThumbnailSettings')) {
+    return;
+}
+
 class TermThumbnailSettings
 {
     public string $file;
@@ -34,10 +38,12 @@ class TermThumbnailSettings
     }
 
     public function admin_enqueue_scripts(){
+        if (!is_admin()) {
+            return;
+        }
 
-        $current_tax = get_current_screen()->taxonomy;
-        // in_array($this->settings['taxonomies']
-        if(!is_admin() || 'edit' != get_current_screen()->base){
+        $screen = get_current_screen();
+        if (!$screen || 'edit' !== $screen->base) {
             return;
         }
 
@@ -189,7 +195,7 @@ class TermThumbnailSettings
 
     public function setting_page_link($actions, $plugin_file)
     {
-        if (!strpos($plugin_file, basename($this->file))) {
+        if (false === strpos($plugin_file, basename($this->file))) {
             return $actions;
         }
 

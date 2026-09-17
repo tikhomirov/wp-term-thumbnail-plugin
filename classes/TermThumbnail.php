@@ -92,10 +92,13 @@ class TermThumbnail
         if ($term instanceof WP_Term) {
             $term_image_id = get_term_meta($term->term_id, 'term_image_id',
                 true);
-            $term_image_url = wp_get_attachment_image_src($term_image_id,'thumbnail', true)[0];
+            $term_image_src = $term_image_id
+                ? wp_get_attachment_image_src($term_image_id, 'thumbnail', true)
+                : false;
+            $term_image_url = is_array($term_image_src) ? ($term_image_src[0] ?? '') : '';
 
             $image_id = get_term_meta($term->term_id, 'default_cover',true);
-            $image_url = wp_get_attachment_url($image_id);
+            $image_url = $image_id ? wp_get_attachment_url($image_id) : '';
         }
 
         require $this->dir . 'template/form.php';
@@ -214,12 +217,14 @@ class TermThumbnail
     {
         switch ($column_name) {
             case 'thumbnail':
-
+                $thumb = null;
                 $thumbnail_id = get_term_meta($term_id, 'term_image_id', true);
-                $url = wp_get_attachment_image_src($thumbnail_id, 'thumbnail',
-                    true)[0];
+                $src = $thumbnail_id
+                    ? wp_get_attachment_image_src($thumbnail_id, 'thumbnail', true)
+                    : false;
+                $url = is_array($src) ? ($src[0] ?? '') : '';
 
-                if (false !== strpos($url, '.svg')) {
+                if ($url && false !== strpos($url, '.svg')) {
                     $thumb = '<img src="'.$url.'" width="100" height="100">';
                 } else {
                     if (!empty($thumbnail_id)) {
