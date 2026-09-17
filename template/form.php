@@ -18,7 +18,7 @@
                value="<?php echo esc_attr($term_image_id); ?>">
         <div id="term__image__wrapper">
             <img src="<?= esc_url($term_image_url) ?>"
-                 style="max-width: 90%; height: auto; display: <?php echo $image_url ? 'block' : 'none'; ?>;"
+                 style="max-width: 90%; height: auto; display: <?php echo $term_image_url ? 'block' : 'none'; ?>;"
                  id="term_image_preview"
             >
         </div>
