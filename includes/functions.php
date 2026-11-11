@@ -128,3 +128,37 @@ function get_default_post_thumbnail($term_id, $attr = []):string
 
     return $thumbnail;
 }
+
+
+/**
+ * Attachment ID of the default post cover inherited from the post's terms.
+ *
+ * Same rule as the `get_post_thumbnail` fallback: terms in get_the_terms() order
+ * (by name), first one with a `default_cover` wins.
+ *
+ * @param int|\WP_Post|null $post       Post.
+ * @param string[]          $taxonomies Taxonomies to check, in priority order.
+ */
+function get_post_default_cover_id($post = null, array $taxonomies = ['category']): ?int
+{
+    $post = get_post($post);
+    if (!$post) {
+        return null;
+    }
+
+    foreach ($taxonomies as $taxonomy) {
+        $terms = get_the_terms($post, $taxonomy);
+        if (!$terms || is_wp_error($terms)) {
+            continue;
+        }
+        foreach ($terms as $term) {
+            $attach_id = get_default_post_thumbnail_id($term->term_id);
+            if ($attach_id) {
+                return (int) $attach_id;
+            }
+        }
+    }
+
+    return null;
+}
+

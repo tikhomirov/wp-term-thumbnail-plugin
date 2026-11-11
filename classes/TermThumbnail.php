@@ -72,6 +72,71 @@ class TermThumbnail
                 return $thumbnail;
             },10,3);
         }
+
+        // Rank Math: posts without their own image get the term cover in og:image / twitter:image.
+        foreach (['facebook', 'twitter'] as $network) {
+            add_action("rank_math/opengraph/{$network}/add_additional_images", [$this, 'add_opengraph_cover']);
+        }
+    }
+
+    /**
+     * Fills an empty Rank Math OpenGraph image list for a single post without a featured image:
+     * the term default cover (full size), otherwise the Rank Math default image.
+     * Images set by Rank Math itself (custom og image, featured image, content image) are kept.
+     *
+     * @param object $image \RankMath\OpenGraph\Image
+     */
+    public function add_opengraph_cover($image): void
+    {
+        if (!is_object($image) || !method_exists($image, 'has_images') || $image->has_images()) {
+            return;
+        }
+        if (!is_singular() || is_front_page()) {
+            return;
+        }
+
+        $post_id = (int) get_queried_object_id();
+        if (!$post_id || (int) get_post_meta($post_id, '_thumbnail_id', true) > 0) {
+            return;
+        }
+
+        $taxonomies = array_values(array_filter((array) $this->taxonomies, static function ($taxonomy) use ($post_id) {
+            return is_object_in_taxonomy(get_post_type($post_id), $taxonomy);
+        }));
+
+        $cover_id = get_post_default_cover_id($post_id, $taxonomies);
+        if ($cover_id && $this->add_opengraph_attachment($image, $cover_id)) {
+            return;
+        }
+
+        $titles = (array) get_option('rank-math-options-titles', []);
+        if (!empty($titles['open_graph_image_id']) && $this->add_opengraph_attachment($image, (int) $titles['open_graph_image_id'])) {
+            return;
+        }
+        if (!empty($titles['open_graph_image'])) {
+            $image->add_image(['url' => (string) $titles['open_graph_image']]);
+        }
+    }
+
+    /**
+     * Adds the full-size attachment file (Rank Math's own variation picker skips images wider than 2000px).
+     */
+    private function add_opengraph_attachment($image, int $attach_id): bool
+    {
+        $src = wp_get_attachment_image_src($attach_id, 'full');
+        if (!$src || empty($src[0])) {
+            return false;
+        }
+        $image->add_image([
+            'id'     => $attach_id,
+            'url'    => $src[0],
+            'width'  => (int) $src[1],
+            'height' => (int) $src[2],
+            'alt'    => (string) get_post_meta($attach_id, '_wp_attachment_image_alt', true),
+            'type'   => (string) get_post_mime_type($attach_id),
+        ]);
+
+        return $image->has_images();
     }
 
     /**
