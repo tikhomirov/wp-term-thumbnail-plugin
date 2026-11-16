@@ -1,8 +1,8 @@
 <?php
 /**
- * @var int|null $term_image_id
+ * @var int|null    $term_image_id
  * @var string|null $term_image_url
- * @var int|null $image_id
+ * @var int|null    $image_id
  * @var string|null $image_url
  */
 ?>

@@ -17,10 +17,12 @@ class TermThumbnail
      * @var string plugin file path
      */
     public string $file;
-    public TermThumbnailSettings $plugin_settings;
-    public string $dir;
-    public string $url;
 
+    public TermThumbnailSettings $plugin_settings;
+
+    public string $dir;
+
+    public string $url;
 
     public function __construct($file = null)
     {
@@ -37,40 +39,59 @@ class TermThumbnail
         $this->plugin_settings->add_actions();
 
         foreach ($this->taxonomies as $taxname) {
-            if (!taxonomy_exists($taxname)) {
+            if (! taxonomy_exists($taxname)) {
                 continue;
             }
 
-            add_action("{$taxname}_add_form_fields",
-                [$this, 'update_term_image']);
-            add_action("{$taxname}_edit_form_fields",
-                [$this, 'update_term_image']);
+            add_action(
+                "{$taxname}_add_form_fields",
+                [$this, 'update_term_image'],
+            );
+            add_action(
+                "{$taxname}_edit_form_fields",
+                [$this, 'update_term_image'],
+            );
 
-            add_action("created_{$taxname}", [$this, 'updated_term_image'], 10,
-                2);
-            add_action("edited_{$taxname}", [$this, 'updated_term_image'], 10,
-                2);
+            add_action(
+                "created_{$taxname}",
+                [$this, 'updated_term_image'],
+                10,
+                2,
+            );
+            add_action(
+                "edited_{$taxname}",
+                [$this, 'updated_term_image'],
+                10,
+                2,
+            );
 
-            add_filter("manage_edit-{$taxname}_columns",
-                [$this, 'add_image_column']);
+            add_filter(
+                "manage_edit-{$taxname}_columns",
+                [$this, 'add_image_column'],
+            );
 
-            add_filter("manage_{$taxname}_custom_column",
-                [$this, 'fill_image_column'], 10, 3);
+            add_filter(
+                "manage_{$taxname}_custom_column",
+                [$this, 'fill_image_column'],
+                10,
+                3,
+            );
 
-            add_filter('get_post_thumbnail', function ($thumbnail, $post_id, $attr) use ($taxname){
+            add_filter('get_post_thumbnail', function ($thumbnail, $post_id, $attr) use ($taxname) {
                 // $taxname = 'category';
-                if(empty($thumbnail)){
+                if (empty($thumbnail)) {
                     $terms = get_the_terms(get_post($post_id), $taxname);
-                    if($terms && !is_wp_error($terms)) {
+                    if ($terms && ! is_wp_error($terms)) {
                         foreach ($terms as $term) {
-                            if($term->taxonomy == $taxname && empty($thumbnail)) {
+                            if ($term->taxonomy == $taxname && empty($thumbnail)) {
                                 $thumbnail = get_default_post_thumbnail($term->term_id, $attr);
                             }
                         }
                     }
                 }
+
                 return $thumbnail;
-            },10,3);
+            }, 10, 3);
         }
 
         // Rank Math: posts without their own image get the term cover in og:image / twitter:image.
@@ -88,15 +109,15 @@ class TermThumbnail
      */
     public function add_opengraph_cover($image): void
     {
-        if (!is_object($image) || !method_exists($image, 'has_images') || $image->has_images()) {
+        if (! is_object($image) || ! method_exists($image, 'has_images') || $image->has_images()) {
             return;
         }
-        if (!is_singular() || is_front_page()) {
+        if (! is_singular() || is_front_page()) {
             return;
         }
 
         $post_id = (int) get_queried_object_id();
-        if (!$post_id || (int) get_post_meta($post_id, '_thumbnail_id', true) > 0) {
+        if (! $post_id || (int) get_post_meta($post_id, '_thumbnail_id', true) > 0) {
             return;
         }
 
@@ -110,10 +131,10 @@ class TermThumbnail
         }
 
         $titles = (array) get_option('rank-math-options-titles', []);
-        if (!empty($titles['open_graph_image_id']) && $this->add_opengraph_attachment($image, (int) $titles['open_graph_image_id'])) {
+        if (! empty($titles['open_graph_image_id']) && $this->add_opengraph_attachment($image, (int) $titles['open_graph_image_id'])) {
             return;
         }
-        if (!empty($titles['open_graph_image'])) {
+        if (! empty($titles['open_graph_image'])) {
             $image->add_image(['url' => (string) $titles['open_graph_image']]);
         }
     }
@@ -124,7 +145,7 @@ class TermThumbnail
     private function add_opengraph_attachment($image, int $attach_id): bool
     {
         $src = wp_get_attachment_image_src($attach_id, 'full');
-        if (!$src || empty($src[0])) {
+        if (! $src || empty($src[0])) {
             return false;
         }
         $image->add_image([
@@ -155,14 +176,17 @@ class TermThumbnail
 
         $image_id = $image_url = $term_image_id = $term_image_url = '';
         if ($term instanceof WP_Term) {
-            $term_image_id = get_term_meta($term->term_id, 'term_image_id',
-                true);
+            $term_image_id = get_term_meta(
+                $term->term_id,
+                'term_image_id',
+                true,
+            );
             $term_image_src = $term_image_id
                 ? wp_get_attachment_image_src($term_image_id, 'thumbnail', true)
                 : false;
             $term_image_url = is_array($term_image_src) ? ($term_image_src[0] ?? '') : '';
 
-            $image_id = get_term_meta($term->term_id, 'default_cover',true);
+            $image_id = get_term_meta($term->term_id, 'default_cover', true);
             $image_url = $image_id ? wp_get_attachment_url($image_id) : '';
         }
 
@@ -173,13 +197,13 @@ class TermThumbnail
     public function updated_term_image($term_id)
     {
         if (isset($_POST['taxonomy_image'])) {
-            update_term_meta($term_id, 'default_cover', intval($_POST['taxonomy_image']));
+            update_term_meta($term_id, 'default_cover', (int) ($_POST['taxonomy_image']));
         } else {
             delete_term_meta($term_id, 'default_cover');
         }
 
         if (isset($_POST['term_image_id'])) {
-            update_term_meta($term_id, 'term_image_id', intval($_POST['term_image_id']));
+            update_term_meta($term_id, 'term_image_id', (int) ($_POST['term_image_id']));
         } else {
             delete_term_meta($term_id, 'term_image_id');
         }
@@ -199,9 +223,9 @@ class TermThumbnail
                         return;
                     }
                     image_frame = wp.media({
-                        title: '<?php _e('Choose image','wp-term-thumbnail'); ?>',
+                        title: '<?php _e('Choose image', 'wp-term-thumbnail'); ?>',
                         button: {
-                            text: '<?php _e('Choose image','wp-term-thumbnail'); ?>'
+                            text: '<?php _e('Choose image', 'wp-term-thumbnail'); ?>'
                         },
                         multiple: false
                     });
@@ -215,7 +239,7 @@ class TermThumbnail
 
                 $('#tax_media_remove').click(function (e) {
                     e.preventDefault();
-                    if (confirm('<?php _e('Are you sure you want to delete the image?','wp-term-thumbnail'); ?>')) {
+                    if (confirm('<?php _e('Are you sure you want to delete the image?', 'wp-term-thumbnail'); ?>')) {
                         $('#term_image_id').val('');
                         $('#term_image_preview').attr('src', '').hide();
                     }
@@ -233,9 +257,9 @@ class TermThumbnail
                         return;
                     }
                     image_frame = wp.media({
-                        title: '<?php _e('Choose image','wp-term-thumbnail'); ?>',
+                        title: '<?php _e('Choose image', 'wp-term-thumbnail'); ?>',
                         button: {
-                            text: '<?php _e('Choose image','wp-term-thumbnail'); ?>'
+                            text: '<?php _e('Choose image', 'wp-term-thumbnail'); ?>'
                         },
                         multiple: false
                     });
@@ -249,7 +273,7 @@ class TermThumbnail
 
                 $('#taxonomy_image_delete_button').click(function (e) {
                     e.preventDefault();
-                    if (confirm('<?php _e('Are you sure you want to delete the image?','wp-term-thumbnail'); ?>')) {
+                    if (confirm('<?php _e('Are you sure you want to delete the image?', 'wp-term-thumbnail'); ?>')) {
                         $('#taxonomy_image').val('');
                         $('#taxonomy_image_preview').attr('src', '').hide();
                     }
@@ -266,16 +290,16 @@ class TermThumbnail
     {
         $num = 1; // после какой по счету колонки вставлять новые
         $new_columns = ['thumbnail' => '<span class="dashicons dashicons-format-image"></span>'];
+
         return array_slice($columns, 0, $num) + $new_columns + array_slice($columns, $num);
     }
 
     /**
      * Parses the column.
      *
-     * @param  string  $content  The current content of the column.
-     * @param  string  $column_name  The name of the column.
-     * @param  int  $term_id  ID of requested taxonomy.
-     *
+     * @param  string $content     The current content of the column.
+     * @param  string $column_name The name of the column.
+     * @param  int    $term_id     ID of requested taxonomy.
      * @return string
      */
     public function fill_image_column($content, $column_name, $term_id)
@@ -289,10 +313,10 @@ class TermThumbnail
                     : false;
                 $url = is_array($src) ? ($src[0] ?? '') : '';
 
-                if ($url && false !== strpos($url, '.svg')) {
-                    $thumb = '<img src="'.$url.'" width="100" height="100">';
+                if ($url && mb_strpos($url, '.svg') !== false) {
+                    $thumb = '<img src="' . $url . '" width="100" height="100">';
                 } else {
-                    if (!empty($thumbnail_id)) {
+                    if (! empty($thumbnail_id)) {
                         $width = $height = '90';
                         if (function_exists('kama_thumb_img')) {
                             $thumb = kama_thumb_a_img([
@@ -302,11 +326,15 @@ class TermThumbnail
                                 'a_attr' => 'data-rel="lightcase"',
                             ], $thumbnail_id);
                         } else {
-                            $thumb = wp_get_attachment_image($thumbnail_id,
-                                [$width, $height], true);
+                            $thumb = wp_get_attachment_image(
+                                $thumbnail_id,
+                                [$width, $height],
+                                true,
+                            );
                         }
                     }
                 }
+
                 return $thumb ??
                     '<span class="dashicons dashicons-format-image"></span>';
                 break;

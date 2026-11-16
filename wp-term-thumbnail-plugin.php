@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name:  Taxonomy Thumbnail
  * Plugin URL:   https://rwsite.ru
@@ -21,16 +22,14 @@
 
 use classes\TermThumbnail;
 
-defined('ABSPATH') or die('Nothing here!');
-
+defined('ABSPATH') or exit('Nothing here!');
 
 require_once 'includes/wp-term-thumbnail-settings.php';
 require_once 'includes/functions.php';
 require_once 'classes/TermThumbnail.php';
 
 add_action('init', function () {
-	load_plugin_textdomain( 'wp-term-thumbnail', false, dirname(plugin_basename(__FILE__)) . '/languages' );
+    load_plugin_textdomain('wp-term-thumbnail', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
-	(new TermThumbnail(__FILE__))->add_actions();
+    (new TermThumbnail(__FILE__))->add_actions();
 }, 99);
-

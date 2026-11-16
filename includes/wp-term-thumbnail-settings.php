@@ -2,7 +2,6 @@
 /**
  * Admin settings
  */
-
 if (class_exists('TermThumbnailSettings')) {
     return;
 }
@@ -10,8 +9,11 @@ if (class_exists('TermThumbnailSettings')) {
 class TermThumbnailSettings
 {
     public string $file;
+
     public const key = 'term_thumbnail';
+
     public const settings_page = 'media';
+
     public ?array $settings;
 
     public function __construct($file)
@@ -22,7 +24,7 @@ class TermThumbnailSettings
 
     public function add_actions()
     {
-        if (is_admin() && !defined('DOING_AJAX')) {
+        if (is_admin() && ! defined('DOING_AJAX')) {
             // рендер секции настроек
             add_action((is_multisite() ? 'network_admin_menu' : 'admin_menu'), [$this, 'admin_options']);
             // ссылка на настойки со страницы плагинов
@@ -32,33 +34,34 @@ class TermThumbnailSettings
                 add_action('network_admin_edit_' . self::key, [$this, 'network_options_update']);
             }
 
-            add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts'],100);
+            add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts'], 100);
 
         }
     }
 
-    public function admin_enqueue_scripts(){
-        if (!is_admin()) {
+    public function admin_enqueue_scripts()
+    {
+        if (! is_admin()) {
             return;
         }
 
         $screen = get_current_screen();
-        if (!$screen || 'edit' !== $screen->base) {
+        if (! $screen || $screen->base !== 'edit') {
             return;
         }
 
-        $ver = defined('WP_DEBUG_SCRIPT') ? current_time('timestamp') : wp_get_theme()->get( 'Version' );
+        $ver = defined('WP_DEBUG_SCRIPT') ? current_time('timestamp') : wp_get_theme()->get('Version');
         $dir_uri = get_template_directory_uri();
         $dir_path = get_template_directory();
 
         // js
-        if( file_exists($dir_path . '/assets/js/plugins/lightcase.js') ) {
+        if (file_exists($dir_path . '/assets/js/plugins/lightcase.js')) {
             wp_register_script('lightcase', $dir_uri . '/assets/js/plugins/lightcase.js', ['jquery'], $ver, false);
         } else {
-            wp_register_script('lightcase', 'https://cdnjs.cloudflare.com/ajax/libs/lightcase/2.5.0/js/lightcase.min.js',  ['jquery'], $ver, false);
+            wp_register_script('lightcase', 'https://cdnjs.cloudflare.com/ajax/libs/lightcase/2.5.0/js/lightcase.min.js', ['jquery'], $ver, false);
         }
         // css
-        if( file_exists($dir_path . '/assets/css/plugins/lightcase.min.css') ) {
+        if (file_exists($dir_path . '/assets/css/plugins/lightcase.min.css')) {
             wp_register_style('lightcase', $dir_uri . '/assets/css/plugins/lightcase.min.css', $ver);
         } else {
             wp_register_style('lightcase', 'https://cdnjs.cloudflare.com/ajax/libs/lightcase/2.5.0/css/lightcase.min.css', $ver);
@@ -93,10 +96,12 @@ class TermThumbnailSettings
 
     }
 
-    public static function get_settings(){
+    public static function get_settings()
+    {
         $opts = is_multisite() ? get_site_option(self::key) : get_option(self::key);
         $def_opt = self::get_default_settings();
-        return array_merge($def_opt, (array)$opts);
+
+        return array_merge($def_opt, (array) $opts);
     }
 
     public static function get_default_settings()
@@ -120,18 +125,23 @@ class TermThumbnailSettings
     {
         // для мультисайта создается отдельная страница в настройках сети
         if (is_multisite()) {
-            $hook = add_submenu_page('settings.php', __('Term Thumbnail Settings', 'wp-term-thumbnail'),
-                __('Term Thumbnail', 'wp-term-thumbnail' ), 'manage_network_options', self::settings_page,
-                [$this,'_network_options_page']
+            $hook = add_submenu_page(
+                'settings.php',
+                __('Term Thumbnail Settings', 'wp-term-thumbnail'),
+                __('Term Thumbnail', 'wp-term-thumbnail'),
+                'manage_network_options',
+                self::settings_page,
+                [$this, '_network_options_page'],
             );
         }
 
         add_settings_section(self::key, __('Term Thumbnail Settings', 'wp-term-thumbnail'), '', self::settings_page);
-        add_settings_field(self::key,
+        add_settings_field(
+            self::key,
             __('Выберите поддерживаемые таксономии', 'wp-term-thumbnail'),
             [$this, 'options_field'],
             self::settings_page,
-            self::key
+            self::key,
         );
 
         register_setting(self::settings_page, self::key, [$this, 'sanitize_options']);
@@ -149,13 +159,13 @@ class TermThumbnailSettings
     public function options_field()
     {
         ?>
-        <select class="select" multiple name="<?=self::key?>[taxonomies][]">
+        <select class="select" multiple name="<?= self::key?>[taxonomies][]">
             <?php
-                foreach (get_taxonomies(['publicly_queryable' => true], 'label') as $key => $wp_tax){
+                foreach (get_taxonomies(['publicly_queryable' => true], 'label') as $key => $wp_tax) {
                     $selected = is_array($this->settings['taxonomies']) && in_array($key, $this->settings['taxonomies']) ? 'selected' : '';
-                    echo '<option value="'.$key.'" '.$selected.'>'.$wp_tax->label.'</option>';
+                    echo '<option value="' . $key . '" ' . $selected . '>' . $wp_tax->label . '</option>';
                 }
-            ?>
+        ?>
         </select>
         <?php
     }
@@ -163,14 +173,14 @@ class TermThumbnailSettings
     /**
      * Save option and validate
      *
-     * @param $opts
      * @return mixed
      */
-    function sanitize_options( $opts ){
+    public function sanitize_options($opts)
+    {
         $default = self::get_default_settings();
 
-        foreach( $opts as $key => &$val ){
-            if(is_string($val)) {
+        foreach ($opts as $key => &$val) {
+            if (is_string($val)) {
                 $val = sanitize_text_field($val);
             } else {
                 array_walk_recursive($val, 'sanitize_text_field');
@@ -195,7 +205,7 @@ class TermThumbnailSettings
 
     public function setting_page_link($actions, $plugin_file)
     {
-        if (false === strpos($plugin_file, basename($this->file))) {
+        if (mb_strpos($plugin_file, basename($this->file)) === false) {
             return $actions;
         }
 
