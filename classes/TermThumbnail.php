@@ -78,8 +78,8 @@ class TermThumbnail
             );
 
             add_filter('get_post_thumbnail', function ($thumbnail, $post_id, $attr) use ($taxname) {
-                // $taxname = 'category';
-                if (empty($thumbnail)) {
+                // Leave explicit attachments to the post thumbnail renderer and its fallbacks.
+                if (empty($thumbnail) && empty($attr['attach_id']) && ! ($post_id && get_post_thumbnail_id($post_id))) {
                     $terms = get_the_terms(get_post($post_id), $taxname);
                     if ($terms && ! is_wp_error($terms)) {
                         foreach ($terms as $term) {
