@@ -42,12 +42,17 @@ the_term_thumbnail(['width' => 100, 'height' => 100]);
 
 - `get_term_thumbnail_id($term_id)` returns the stored ID or `false`. `has_term_thumbnail($term_id)` checks for a stored ID, not whether the attachment still exists.
 - `get_term_thumbnail($args)` returns the term image markup (or no image); use `term_id` to select a specific term or omit it on a term archive. `the_term_thumbnail($args)` echoes the result and uses the queried term on taxonomy archives. The result passes through the `get_term_thumbnail` filter.
-- `get_default_post_thumbnail_id($term_id)` returns the term's cover ID or `null`. `get_default_post_thumbnail($term_id, $args)` renders the cover or returns an empty string; without Kama Thumbnail, it uses the full-size WordPress attachment image.
+- `get_default_post_thumbnail_id($term_id)` returns the term's cover ID or `null`. `get_default_post_thumbnail($term_id, $args)` renders the cover or returns an empty string; without `thumb_img()`, it uses the full-size WordPress attachment image.
 - `get_post_default_cover_id($post, $taxonomies)` returns the first stored cover ID or `null`. It checks the supplied taxonomies in order (default: `['category']`) and reads terms in the order returned by `get_the_terms()`. This helper does not check for a featured image or read the plugin's taxonomy settings.
+
+## Optional integration
+
+[WP Thumbnail Plugin](https://github.com/tikhomirov/wp-thumbnail-plugin) can generate term thumbnails and fallback post covers via `thumb_img()`, and linked previews in the admin term list via `thumb_a_img()`. Each function is checked independently. If the corresponding function is unavailable (including installs that only provide `kama_thumb_*`), attachments are rendered with `wp_get_attachment_image()`.
+
+With `thumb_img()` available, a term image that cannot be generated can display a placeholder when `show_placeholder` is enabled (the default). The native WordPress path does not display a placeholder when no attachment is set.
 
 ## Fallback behavior
 
-- **Term images:** When Kama Thumbnail is available, the plugin delegates rendering to it and supplies a stub URL if `show_placeholder` is enabled (the default). Without Kama Thumbnail, it uses `wp_get_attachment_image()` when an attachment ID is available and does not render a placeholder otherwise.
 - **Post covers:** The plugin hooks into the `get_post_thumbnail` filter for the enabled taxonomies. It leaves existing markup alone and does not substitute a term cover when the caller supplied `attach_id` or the post has a featured-image ID, even if rendering produced no markup. Otherwise, it uses the first term cover that renders, checking enabled taxonomies and then their assigned terms in order. It does not set the post's featured image or hook into WordPress core's `post_thumbnail_html` filter.
 - **Rank Math:** On singular pages other than the front page, the plugin can fill an empty Facebook or Twitter image list for a post without a featured image. It tries the inherited cover from the configured taxonomies first, then Rank Math's configured default image. It does not replace images Rank Math has already selected.
 
