@@ -318,13 +318,16 @@ class TermThumbnail
                 } else {
                     if (! empty($thumbnail_id)) {
                         $width = $height = '90';
-                        if (function_exists('kama_thumb_img')) {
-                            $thumb = kama_thumb_a_img([
+                        if (function_exists('thumb_a_img')) {
+                            $thumb = thumb_a_img([
                                 'width'  => $width,
                                 'height' => $height,
                                 'crop'   => true,
-                                'a_attr' => 'data-rel="lightcase"',
-                            ], $thumbnail_id);
+                            ], (int) $thumbnail_id);
+                            // The public API does not accept anchor attributes.
+                            if (str_starts_with($thumb, '<a ')) {
+                                $thumb = '<a data-rel="lightcase" ' . substr($thumb, 3);
+                            }
                         } else {
                             $thumb = wp_get_attachment_image(
                                 $thumbnail_id,
